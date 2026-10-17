@@ -1,0 +1,14 @@
+{
+  "name": "pi-magpie-current-model",
+  "version": "0.1.0",
+  "description": "pi extension: show the model magpie actually ran (X-Magpie-Model) instead of the group name",
+  "keywords": ["pi-package", "pi", "extension", "magpie"],
+  "license": "MIT",
+  "type": "module",
+  "pi": {
+    "extensions": ["./index.ts"]
+  },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  }
+}
