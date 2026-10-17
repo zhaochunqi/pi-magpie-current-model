@@ -9,66 +9,60 @@
  * This extension captures that header and shows the real model name in a pi
  * status line, so you always know what actually ran. It also exposes
  * `/magpie-model` to print the current value on demand.
+ *
+ * The header parsing and text formatting live in `magpie-model.ts`; this file
+ * is only the pi glue (events, status line, command).
  */
 
 import type { ExtensionAPI, ExtensionContext } from "@earendil-works/pi-coding-agent";
+import {
+	commandLine,
+	groupLabel,
+	headerValue,
+	MAGPIE_MODEL_HEADER,
+	statusLine,
+	type CurrentModel,
+} from "./magpie-model.ts";
 
 const STATUS_KEY = "magpie-current-model";
 
-function headerValue(headers: Record<string, string> | undefined, name: string): string | undefined {
-	if (!headers) return undefined;
-	const target = name.toLowerCase();
-	for (const key of Object.keys(headers)) {
-		if (key.toLowerCase() === target) return headers[key];
-	}
-	return undefined;
-}
-
 export default function magpieCurrentModel(pi: ExtensionAPI): void {
 	let liveCtx: ExtensionContext | undefined;
-	let actualModel: string | undefined;
+	let served: string | undefined;
 
-	function groupLabel(ctx: ExtensionContext | undefined): string {
-		const m = ctx?.model;
-		return m?.name ?? m?.id ?? "model";
+	function current(ctx: ExtensionContext | undefined): CurrentModel {
+		return { group: groupLabel(ctx?.model), served };
 	}
 
 	function render(ctx: ExtensionContext | undefined): void {
 		if (!ctx?.hasUI) return;
 		liveCtx = ctx;
-		const group = groupLabel(ctx);
-		const shown = actualModel ?? group;
-		const suffix = actualModel && actualModel !== group ? `  (group: ${group})` : "";
-		ctx.ui.setStatus(STATUS_KEY, `magpie: ${shown}${suffix}`);
+		ctx.ui.setStatus(STATUS_KEY, statusLine(current(ctx)));
 	}
 
 	pi.on("session_start", (_event, ctx) => {
 		liveCtx = ctx;
-		actualModel = undefined;
+		served = undefined;
 		render(ctx);
 	});
 
 	pi.on("model_select", (_event, ctx) => {
 		liveCtx = ctx;
-		actualModel = undefined;
+		served = undefined;
 		render(ctx);
 	});
 
 	pi.on("after_provider_response", (event, ctx) => {
 		liveCtx = ctx;
-		const served = headerValue(event.headers, "x-magpie-model");
-		if (served) actualModel = served;
+		const reported = headerValue(event.headers, MAGPIE_MODEL_HEADER);
+		if (reported) served = reported;
 		render(ctx);
 	});
 
 	pi.registerCommand("magpie-model", {
 		description: "Show the model magpie actually ran for the last request",
 		handler: async (_args, ctx) => {
-			const group = groupLabel(ctx);
-			const msg = actualModel
-				? `magpie ran: ${actualModel} (selected group: ${group})`
-				: `no request yet; selected group: ${group}`;
-			ctx.ui.notify(msg, "info");
+			ctx.ui.notify(commandLine(current(ctx ?? liveCtx)), "info");
 		},
 	});
 }

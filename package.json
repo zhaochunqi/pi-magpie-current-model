@@ -4,9 +4,20 @@
   "description": "pi extension: show the model magpie actually ran (X-Magpie-Model) instead of the group name",
   "keywords": ["pi-package", "pi", "extension", "magpie"],
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zhaochunqi/pi-magpie-current-model.git"
+  },
+  "homepage": "https://github.com/zhaochunqi/pi-magpie-current-model#readme",
+  "bugs": {
+    "url": "https://github.com/zhaochunqi/pi-magpie-current-model/issues"
+  },
   "type": "module",
   "pi": {
     "extensions": ["./index.ts"]
+  },
+  "scripts": {
+    "test": "node --test magpie-model.test.ts"
   },
   "peerDependencies": {
     "@earendil-works/pi-coding-agent": "*"
